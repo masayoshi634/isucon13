@@ -1,5 +1,3 @@
-version: '3.0'
-
 services:
   webapp:
     cpus: 2
@@ -20,8 +18,38 @@ services:
       ISUCON13_POWERDNS_HOST: powerdns
       ISUCON13_POWERDNS_SUBDOMAIN_ADDRESS: 127.0.0.1
       ISUCON13_POWERDNS_DISABLED: true
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_INSECURE: true
+      OTEL_SERVICE_NAME: isucon13
+      OTEL_PROPAGATORS: “tracecontext,baggage,xray”
+      OTEL_TRACES_SAMPLER: "traceidratio"
+      OTEL_TRACES_SAMPLER_ARG: 1.0
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
       mysql:
         condition: service_healthy
+
+  # Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"
+    environment:
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=isucon13,service.namespace=otel-collector,service.instance.id=otel-collector-01
+
+  openobserve:
+    image: public.ecr.aws/zinclabs/openobserve:latest
+    ports:
+      - 5080:5080
+    volumes:
+      - openobserve-data:/data
+    environment:
+      - ZO_DATA_DIR=/data
+      - ZO_ROOT_USER_EMAIL=root@example.com
+      - ZO_ROOT_USER_PASSWORD=Complexpass#123
+volumes:
+  openobserve-data:

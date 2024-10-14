@@ -19,10 +19,10 @@ services:
     volumes:
       - ../webapp/sql/initdb.d:/docker-entrypoint-initdb.d
       - ./pdns/20_powerdns_schema.sql:/docker-entrypoint-initdb.d/20_powerdns_schema.sql
-      - mysql_volume:/var/lib/mysql
+      - ./etc/mysql/conf.d/my.cnf:/etc/my.cnf
+      - ./data:/var/lib/mysql
     ports:
       - "127.0.0.1:3306:3306"
-    restart: always
     healthcheck:
       test: mysqladmin ping -h 127.0.0.1 -uisucon -pisucon
       interval: 1s
@@ -46,11 +46,9 @@ services:
       # https://github.com/PowerDNS/pdns/blob/8cbe7d8e3c44f87b986a6f88cda98c3a0d943026/dockerdata/pdns.conf#L3
       - ../provisioning/ansible/roles/powerdns/files/pdns.conf:/etc/powerdns/pdns.conf:ro
       - ../provisioning/ansible/roles/powerdns/files/pdns.d/docker.conf:/etc/powerdns/pdns.d/docker.conf:ro
-    restart: always
     depends_on:
       mysql:
         condition: service_healthy
 
 volumes:
-  mysql_volume:
   powerdns_volume:
